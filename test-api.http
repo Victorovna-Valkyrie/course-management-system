@@ -1,0 +1,213 @@
+### 测试场景 1：创建课程
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+
+{
+  "code": "CS101",
+  "title": "计算机科学导论",
+  "instructor": {
+    "id": "T001",
+    "name": "张教授",
+    "email": "zhang@example.edu.cn"
+  },
+  "schedule": {
+    "dayOfWeek": "MONDAY",
+    "startTime": "08:00",
+    "endTime": "10:00",
+    "expectedAttendance": 50
+  },
+  "capacity": 60
+}
+
+### 预期结果：201 Created
+
+### 测试场景 2：查询所有课程
+GET http://localhost:8080/api/courses
+
+### 预期结果：200 OK，返回课程列表
+
+### 测试场景 3：根据 ID 查询课程
+GET http://localhost:8080/api/courses/{{courseId}}
+
+### 预期结果：200 OK，返回指定课程信息
+
+### 测试场景 4：更新课程信息
+PUT http://localhost:8080/api/courses/{{courseId}}
+Content-Type: application/json
+
+{
+  "code": "CS101",
+  "title": "计算机科学导论-更新版",
+  "instructor": {
+    "id": "T001",
+    "name": "张教授",
+    "email": "zhang@example.edu.cn"
+  },
+  "schedule": {
+    "dayOfWeek": "MONDAY",
+    "startTime": "08:00",
+    "endTime": "10:00",
+    "expectedAttendance": 50
+  },
+  "capacity": 60
+}
+
+### 预期结果：200 OK
+
+### 测试场景 5：删除课程
+DELETE http://localhost:8080/api/courses/{{courseId}}
+
+### 预期结果：200 OK
+
+### 测试场景 6：创建学生
+POST http://localhost:8080/api/students
+Content-Type: application/json
+
+{
+  "studentId": "S2024001",
+  "name": "张三",
+  "major": "计算机科学与技术",
+  "grade": 2024,
+  "email": "zhangsan@example.com"
+}
+
+### 预期结果：201 Created
+
+### 测试场景 7：查询所有学生
+GET http://localhost:8080/api/students
+
+### 预期结果：200 OK，返回学生列表
+
+### 测试场景 8：根据 ID 查询学生
+GET http://localhost:8080/api/students/{{studentId}}
+
+### 预期结果：200 OK，返回指定学生信息
+
+### 测试场景 9：更新学生信息
+PUT http://localhost:8080/api/students/{{studentId}}
+Content-Type: application/json
+
+{
+  "studentId": "S2024001",
+  "name": "张三丰",
+  "major": "软件工程",
+  "grade": 2024,
+  "email": "zhangsanfeng@example.com"
+}
+
+### 预期结果：200 OK
+
+### 测试场景 10：创建一门容量为 2 的课程
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+
+{
+  "code": "CS102",
+  "title": "数据结构",
+  "instructor": {
+    "id": "T002",
+    "name": "李教授",
+    "email": "li@example.edu.cn"
+  },
+  "schedule": {
+    "dayOfWeek": "TUESDAY",
+    "startTime": "10:00",
+    "endTime": "12:00",
+    "expectedAttendance": 30
+  },
+  "capacity": 2
+}
+
+### 预期结果：201 Created
+
+### 测试场景 11：学生 S2024001 选课
+POST http://localhost:8080/api/enrollments
+Content-Type: application/json
+
+{
+  "courseId": "{{courseId2}}",
+  "studentId": "{{studentId}}"
+}
+
+### 预期结果：201 Created
+
+### 测试场景 12：创建另一个学生
+POST http://localhost:8080/api/students
+Content-Type: application/json
+
+{
+  "studentId": "S2024002",
+  "name": "李四",
+  "major": "计算机科学与技术",
+  "grade": 2024,
+  "email": "lisi@example.com"
+}
+
+### 预期结果：201 Created
+
+### 测试场景 13：学生 S2024002 选课
+POST http://localhost:8080/api/enrollments
+Content-Type: application/json
+
+{
+  "courseId": "{{courseId2}}",
+  "studentId": "{{studentId2}}"
+}
+
+### 预期结果：201 Created
+
+### 测试场景 14：创建第三个学生
+POST http://localhost:8080/api/students
+Content-Type: application/json
+
+{
+  "studentId": "S2024003",
+  "name": "王五",
+  "major": "计算机科学与技术",
+  "grade": 2024,
+  "email": "wangwu@example.com"
+}
+
+### 预期结果：201 Created
+
+### 测试场景 15：学生 S2024003 选课（应该失败，因为课程容量已满）
+POST http://localhost:8080/api/enrollments
+Content-Type: application/json
+
+{
+  "courseId": "{{courseId2}}",
+  "studentId": "{{studentId3}}"
+}
+
+### 预期结果：400 Bad Request
+
+### 测试场景 16：学生 S2024001 再次选课（应该失败，因为重复选课）
+POST http://localhost:8080/api/enrollments
+Content-Type: application/json
+
+{
+  "courseId": "{{courseId2}}",
+  "studentId": "{{studentId}}"
+}
+
+### 预期结果：400 Bad Request
+
+### 测试场景 17：查询课程，验证 enrolled 字段为 2
+GET http://localhost:8080/api/courses/{{courseId2}}
+
+### 预期结果：200 OK，enrolled 字段为 2
+
+### 测试场景 18：查询选课记录
+GET http://localhost:8080/api/enrollments
+
+### 预期结果：200 OK，返回选课记录列表
+
+### 测试场景 19：按课程查询选课记录
+GET http://localhost:8080/api/enrollments/course/{{courseId2}}
+
+### 预期结果：200 OK，返回该课程的选课记录
+
+### 测试场景 20：按学生查询选课记录
+GET http://localhost:8080/api/enrollments/student/{{studentId}}
+
+### 预期结果：200 OK，返回该学生的选课记录

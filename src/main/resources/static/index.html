@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课程管理系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn-refresh {
+            background-color: #28a745;
+        }
+        .btn-refresh:hover {
+            background-color: #218838;
+        }
+        pre {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>课程管理系统</h1>
+        
+        <div class="section">
+            <h2>学生信息</h2>
+            <button class="btn btn-refresh" onclick="loadStudents()">刷新学生列表</button>
+            <div id="students-data"></div>
+        </div>
+        
+        <div class="section">
+            <h2>课程信息</h2>
+            <button class="btn btn-refresh" onclick="loadCourses()">刷新课程列表</button>
+            <div id="courses-data"></div>
+        </div>
+        
+        <div class="section">
+            <h2>选课信息</h2>
+            <button class="btn btn-refresh" onclick="loadEnrollments()">刷新选课列表</button>
+            <div id="enrollments-data"></div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载时获取数据
+        window.onload = function() {
+            loadStudents();
+            loadCourses();
+            loadEnrollments();
+        };
+        
+        // 加载学生数据
+        function loadStudents() {
+            fetch('/api/students')
+                .then(response => response.json())
+                .then(data => {
+                    displayStudents(data.data);
+                })
+                .catch(error => {
+                    document.getElementById('students-data').innerHTML = '<p>加载学生数据失败: ' + error + '</p>';
+                });
+        }
+        
+        // 显示学生数据
+        function displayStudents(students) {
+            if (!students || students.length === 0) {
+                document.getElementById('students-data').innerHTML = '<p>暂无学生数据</p>';
+                return;
+            }
+            
+            let html = '<table>';
+            html += '<tr><th>ID</th><th>学号</th><th>姓名</th><th>专业</th><th>年级</th><th>邮箱</th><th>创建时间</th></tr>';
+            
+            students.forEach(student => {
+                html += '<tr>';
+                html += '<td>' + student.id + '</td>';
+                html += '<td>' + student.studentId + '</td>';
+                html += '<td>' + student.name + '</td>';
+                html += '<td>' + student.major + '</td>';
+                html += '<td>' + student.grade + '</td>';
+                html += '<td>' + student.email + '</td>';
+                html += '<td>' + new Date(student.createdAt).toLocaleString('zh-CN') + '</td>';
+                html += '</tr>';
+            });
+            
+            html += '</table>';
+            document.getElementById('students-data').innerHTML = html;
+        }
+        
+        // 加载课程数据
+        function loadCourses() {
+            fetch('/api/courses')
+                .then(response => response.json())
+                .then(data => {
+                    displayCourses(data.data);
+                })
+                .catch(error => {
+                    document.getElementById('courses-data').innerHTML = '<p>加载课程数据失败: ' + error + '</p>';
+                });
+        }
+        
+        // 显示课程数据
+        function displayCourses(courses) {
+            if (!courses || courses.length === 0) {
+                document.getElementById('courses-data').innerHTML = '<p>暂无课程数据</p>';
+                return;
+            }
+            
+            let html = '<table>';
+            html += '<tr><th>ID</th><th>课程代码</th><th>课程名称</th><th>讲师</th><th>容量</th><th>已选人数</th><th>时间安排</th></tr>';
+            
+            courses.forEach(course => {
+                html += '<tr>';
+                html += '<td>' + course.id + '</td>';
+                html += '<td>' + course.code + '</td>';
+                html += '<td>' + course.title + '</td>';
+                html += '<td>' + (course.instructor ? course.instructor.name : '') + '</td>';
+                html += '<td>' + course.capacity + '</td>';
+                html += '<td>' + course.enrolled + '</td>';
+                html += '<td>' + (course.schedule ? course.schedule.dayOfWeek + ' ' + course.schedule.startTime + '-' + course.schedule.endTime : '') + '</td>';
+                html += '</tr>';
+            });
+            
+            html += '</table>';
+            document.getElementById('courses-data').innerHTML = html;
+        }
+        
+        // 加载选课数据
+        function loadEnrollments() {
+            fetch('/api/enrollments')
+                .then(response => response.json())
+                .then(data => {
+                    displayEnrollments(data.data);
+                })
+                .catch(error => {
+                    document.getElementById('enrollments-data').innerHTML = '<p>加载选课数据失败: ' + error + '</p>';
+                });
+        }
+        
+        // 显示选课数据
+        function displayEnrollments(enrollments) {
+            if (!enrollments || enrollments.length === 0) {
+                document.getElementById('enrollments-data').innerHTML = '<p>暂无选课数据</p>';
+                return;
+            }
+            
+            let html = '<table>';
+            html += '<tr><th>ID</th><th>课程ID</th><th>学生ID</th><th>选课时间</th></tr>';
+            
+            enrollments.forEach(enrollment => {
+                html += '<tr>';
+                html += '<td>' + enrollment.id + '</td>';
+                html += '<td>' + enrollment.courseId + '</td>';
+                html += '<td>' + enrollment.studentId + '</td>';
+                html += '<td>' + new Date(enrollment.enrolledAt).toLocaleString('zh-CN') + '</td>';
+                html += '</tr>';
+            });
+            
+            html += '</table>';
+            document.getElementById('enrollments-data').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
