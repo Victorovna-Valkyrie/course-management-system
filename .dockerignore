@@ -1,0 +1,14 @@
+# 排除不必要的文件和目录
+target/
+.git/
+.gitignore
+README.md
+Dockerfile
+.dockerignore
+*.log
+*.md
+mvnw
+mvnw.cmd
+.mvn/
+test-api.http
+test-script.sh

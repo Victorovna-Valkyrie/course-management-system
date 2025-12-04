@@ -43,6 +43,7 @@ src/
 │   │       └── EnrollmentService.java
 │   └── resources/
 │       ├── application.properties         # 配置文件
+│       ├── application-docker.yml        # Docker环境配置文件
 │       └── static/
 │           └── index.html                # 前端展示页面
 └── test/                                 # 测试代码
@@ -175,6 +176,189 @@ mvn spring-boot:run
 - 5名学生：张三、李四、王五、赵六、钱七
 
 可以通过前端页面或Postman等工具测试API接口。
+
+## 容器化部署
+
+### 容器化架构概览
+
+容器化部署采用以下架构：
+
+- **应用服务 (app)**: 基于Spring Boot的课程管理系统
+- **数据库服务 (mysql)**: MySQL 8.0数据库
+- **网络**: 自定义桥接网络 `coursehub-network`
+- **数据持久化**: 命名卷 `mysql_data` 存储数据库文件
+
+### Dockerfile 设计
+
+#### 多阶段构建策略
+
+采用多阶段构建优化镜像大小：
+
+```dockerfile
+# 构建阶段
+FROM maven:3.9-eclipse-temurin-17 AS builder
+# ... 构建应用
+
+# 运行阶段
+FROM eclipse-temurin:17-jre-alpine
+# ... 运行应用
+```
+
+#### 安全性考虑
+
+1. 使用非root用户运行应用
+2. 采用Alpine Linux基础镜像减小攻击面
+3. 仅包含运行应用所需的最小依赖
+
+#### 构建优化
+
+1. 使用 `.dockerignore` 排除不必要的文件
+2. 分层复制提高构建缓存命中率
+3. 多阶段构建减少最终镜像大小
+
+### Docker Compose 配置
+
+#### 服务定义
+
+##### 应用服务 (app)
+```yaml
+app:
+  build:
+    context: .
+    dockerfile: Dockerfile
+  ports:
+    - "8080:8080"
+  environment:
+    - SPRING_PROFILES_ACTIVE=docker
+    - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true
+    - SPRING_DATASOURCE_USERNAME=valkyrie
+    - SPRING_DATASOURCE_PASSWORD=2501005
+  depends_on:
+    - mysql
+  networks:
+    - coursehub-network
+  restart: unless-stopped
+```
+
+##### 数据库服务 (mysql)
+```yaml
+mysql:
+  image: mysql:8.0
+  ports:
+    - "3306:3306"
+  environment:
+    - MYSQL_DATABASE=course_management
+    - MYSQL_USER=valkyrie
+    - MYSQL_PASSWORD=2501005
+    - MYSQL_ROOT_PASSWORD=rootpassword
+  volumes:
+    - mysql_data:/var/lib/mysql
+  networks:
+    - coursehub-network
+  restart: unless-stopped
+  command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+```
+
+#### 网络配置
+
+```yaml
+networks:
+  coursehub-network:
+    driver: bridge
+```
+
+#### 数据卷配置
+
+```yaml
+volumes:
+  mysql_data:
+```
+
+### 容器化特性
+- 多阶段构建，优化镜像大小
+- 使用非root用户运行应用
+- 支持Docker Compose一键部署
+- 数据持久化存储
+- 环境变量配置支持
+
+### 文件说明
+- `Dockerfile`: 定义应用镜像构建过程
+- `docker-compose.yml`: 编排应用和数据库服务
+- `application-docker.yml`: Docker环境专用配置
+
+### 应用配置调整
+
+#### Docker专用配置文件
+
+创建 `src/main/resources/application-docker.yml`：
+
+```yaml
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true}
+    username: ${SPRING_DATASOURCE_USERNAME:valkyrie}
+    password: ${SPRING_DATASOURCE_PASSWORD:2501005}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+```
+
+#### 关键配置要点
+
+1. 数据库URL使用服务名 `mysql` 而非 `localhost`
+2. 通过环境变量支持灵活配置
+3. JPA的 `ddl-auto` 设为 `update` 以自动创建表结构
+4. 使用Docker专用的profile: `spring.profiles.active=docker`
+
+### 部署操作步骤
+
+#### 1. 构建镜像
+```bash
+docker compose build
+```
+
+#### 2. 启动服务
+```bash
+docker compose up -d
+```
+
+#### 3. 查看服务状态
+```bash
+docker compose ps
+```
+
+#### 4. 查看日志
+```bash
+# 查看应用日志
+docker compose logs -f app
+
+# 查看数据库日志
+docker compose logs -f mysql
+```
+
+#### 5. 停止服务
+```bash
+# 停止服务但保留数据
+docker compose down
+
+# 停止服务并删除数据卷
+docker compose down -v
+```
+
+### 环境变量配置
+可以通过环境变量自定义配置：
+- `SPRING_DATASOURCE_URL`: 数据库连接URL
+- `SPRING_DATASOURCE_USERNAME`: 数据库用户名
+- `SPRING_DATASOURCE_PASSWORD`: 数据库密码
+
+### 数据持久化
+MySQL数据通过命名卷持久化存储，即使容器重启数据也不会丢失。
 
 ## API接口详情
 
@@ -318,6 +502,41 @@ GET http://localhost:8080/api/enrollments/course/{courseId}
 ```http
 GET http://localhost:8080/api/enrollments/student/{studentId}
 ```
+
+## 功能验证
+
+### API测试
+
+#### 获取所有课程
+```bash
+curl http://localhost:8080/api/courses
+```
+
+#### 创建新课程
+```bash
+curl -X POST http://localhost:8080/api/courses \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "CS102",
+    "title": "数据结构与算法",
+    "instructor": {
+      "id": "T002",
+      "name": "李教授",
+      "email": "li@example.edu.cn"
+    },
+    "schedule": {
+      "dayOfWeek": "TUESDAY",
+      "startTime": "10:00",
+      "endTime": "12:00",
+      "expectedAttendance": 40
+    },
+    "capacity": 50
+  }'
+```
+
+### Web界面访问
+
+访问 http://localhost:8080 查看Web界面。
 
 ## 测试数据
 
