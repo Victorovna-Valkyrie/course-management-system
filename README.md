@@ -2,6 +2,11 @@
 
 这是一个基于Spring Boot的课程管理系统，实现了课程管理、学生管理和选课管理等功能。系统提供了完整的RESTful API接口，支持课程创建、学生注册、选课操作等核心功能。
 
+该系统采用微服务架构，分为三个主要服务：
+- 主服务（Main Service）：提供核心的课程、学生和选课管理功能，运行在端口8080
+- 目录服务（Catalog Service）：专门处理课程目录相关功能，运行在端口8081
+- 注册服务（Enrollment Service）：专门处理学生选课注册相关功能，运行在端口8082
+
 ## 技术栈
 
 - **后端框架**: Spring Boot 2.7.18
@@ -11,43 +16,77 @@
 - **ORM框架**: Hibernate/JPA
 - **数据库连接池**: HikariCP
 - **前端展示**: HTML/CSS/JavaScript (仅用于数据展示)
+- **容器化**: Docker & Docker Compose
 
 ## 项目结构
 
 ```
-src/
-├── main/
-│   ├── java/com/valkyrie/course/
-│   │   ├── CourseApplication.java         # 应用启动类
-│   │   ├── config/
-│   │   │   └── DataInitializer.java      # 初始化测试数据
-│   │   ├── controller/                   # 控制器层
-│   │   │   ├── CourseController.java
-│   │   │   ├── StudentController.java
-│   │   │   └── EnrollmentController.java
-│   │   ├── dto/
-│   │   │   └── ApiResponse.java          # 统一API响应格式
-│   │   ├── model/                        # 实体类
-│   │   │   ├── Course.java
-│   │   │   ├── Instructor.java
-│   │   │   ├── ScheduleSlot.java
-│   │   │   ├── Student.java
-│   │   │   └── Enrollment.java
-│   │   ├── repository/                   # 数据访问层
-│   │   │   ├── CourseRepository.java
-│   │   │   ├── StudentRepository.java
-│   │   │   └── EnrollmentRepository.java
-│   │   └── service/                      # 业务逻辑层
-│   │       ├── CourseService.java
-│   │       ├── StudentService.java
-│   │       └── EnrollmentService.java
-│   └── resources/
-│       ├── application.properties         # 配置文件
-│       ├── application-docker.yml        # Docker环境配置文件
-│       └── static/
-│           └── index.html                # 前端展示页面
-└── test/                                 # 测试代码
+.
+├── src/main/java/com/valkyrie/course/              # 主服务源代码
+│   ├── CourseApplication.java                      # 主服务启动类
+│   ├── config/
+│   │   └── DataInitializer.java                   # 初始化测试数据
+│   ├── controller/                                # 主服务控制器层
+│   │   ├── CourseController.java
+│   │   ├── StudentController.java
+│   │   └── EnrollmentController.java
+│   ├── dto/
+│   │   └── ApiResponse.java                       # 统统API响应格式
+│   ├── model/                                     # 主服务实体类
+│   │   ├── Course.java
+│   │   ├── Instructor.java
+│   │   ├── ScheduleSlot.java
+│   │   ├── Student.java
+│   │   └── Enrollment.java
+│   ├── repository/                                # 主服务数据访问层
+│   │   ├── CourseRepository.java
+│   │   ├── StudentRepository.java
+│   │   └── EnrollmentRepository.java
+│   └── service/                                   # 主服务业务逻辑层
+│       ├── CourseService.java
+│       ├── StudentService.java
+│       └── EnrollmentService.java
+├── catalog-service/                               # 课程目录服务
+│   └── src/main/java/com/valkyrie/catalog/
+│       ├── CatalogServiceApplication.java         # 目录服务启动类
+│       ├── controller/
+│       │   └── CourseController.java             # 课程相关API
+│       ├── dto/
+│       │   └── ApiResponse.java                  # 统一API响应格式
+│       ├── model/
+│       │   ├── Course.java
+│       │   ├── Instructor.java
+│       │   └── ScheduleSlot.java
+│       ├── repository/
+│       │   └── CourseRepository.java
+│       └── service/
+│           └── CourseService.java
+├── enrollment-service/                            # 学生选课服务
+│   └── src/main/java/com/valkyrie/enrollment/
+│       ├── EnrollmentServiceApplication.java      # 选课服务启动类
+│       ├── config/
+│       │   └── AppConfig.java                    # 配置类
+│       ├── controller/
+│       │   ├── EnrollmentController.java         # 选课相关API
+│       │   ├── HomeController.java               # 主页控制器
+│       │   └── StudentController.java            # 学生相关API
+│       ├── model/
+│       │   ├── Enrollment.java
+│       │   ├── EnrollmentStatus.java
+│       │   └── Student.java
+│       ├── repository/
+│       │   ├── EnrollmentRepository.java
+│       │   └── StudentRepository.java
+│       └── service/
+│           ├── EnrollmentService.java
+│           └── StudentService.java
+└── src/main/resources/
+    ├── application.properties                      # 主服务配置文件
+    ├── application-docker.yml                     # Docker环境配置文件
+    └── static/
+        └── index.html                             # 前端展示页面
 ```
+
 
 ## 核心功能
 
@@ -181,12 +220,20 @@ mvn spring-boot:run
 
 ### 容器化架构概览
 
-容器化部署采用以下架构：
+容器化部署采用微服务架构，包含以下组件：
 
-- **应用服务 (app)**: 基于Spring Boot的课程管理系统
+- **主应用服务 (app)**: 基于Spring Boot的课程管理系统主服务，监听端口8080
+- **目录服务 (catalog-service)**: 课程目录管理服务，监听端口8081
+- **注册服务 (enrollment-service)**: 学生选课注册服务，监听端口8082
 - **数据库服务 (mysql)**: MySQL 8.0数据库
 - **网络**: 自定义桥接网络 `coursehub-network`
 - **数据持久化**: 命名卷 `mysql_data` 存储数据库文件
+
+当系统运行后，可以通过以下URL访问各个服务：
+- 主服务API: http://localhost:8080
+- 课程目录服务API: http://localhost:8081
+- 学生选课服务API: http://localhost:8082
+- 数据库连接: localhost:3306
 
 ### Dockerfile 设计
 
@@ -220,7 +267,7 @@ FROM eclipse-temurin:17-jre-alpine
 
 #### 服务定义
 
-##### 应用服务 (app)
+##### 主应用服务 (app)
 ```yaml
 app:
   build:
@@ -233,6 +280,43 @@ app:
     - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true
     - SPRING_DATASOURCE_USERNAME=valkyrie
     - SPRING_DATASOURCE_PASSWORD=2501005
+  depends_on:
+    - mysql
+  networks:
+    - coursehub-network
+  restart: unless-stopped
+```
+
+##### 目录服务 (catalog-service)
+```yaml
+catalog-service:
+  build:
+    context: ./catalog-service
+  ports:
+    - "8081:8081"
+  environment:
+    - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true
+    - SPRING_DATASOURCE_USERNAME=valkyrie
+    - SPRING_DATASOURCE_PASSWORD=2501005
+  depends_on:
+    - mysql
+  networks:
+    - coursehub-network
+  restart: unless-stopped
+```
+
+##### 注册服务 (enrollment-service)
+```yaml
+enrollment-service:
+  build:
+    context: ./enrollment-service
+  ports:
+    - "8082:8082"
+  environment:
+    - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true
+    - SPRING_DATASOURCE_USERNAME=valkyrie
+    - SPRING_DATASOURCE_PASSWORD=2501005
+    - CATALOG_SERVICE_URL=http://catalog-service:8081
   depends_on:
     - mysql
   networks:
@@ -328,15 +412,28 @@ docker compose build
 docker compose up -d
 ```
 
+系统启动后，可以通过以下URL访问各个服务：
+- 主服务Web界面: http://localhost:8080
+- 主服务API接口: http://localhost:8080/api
+- 课程目录服务API: http://localhost:8081/api
+- 学生选课服务API: http://localhost:8082/api
+- 数据库连接: localhost:3306
+
 #### 3. 查看服务状态
 ```bash
 docker compose ps
 ```
 
 #### 4. 查看日志
-```bash
-# 查看应用日志
+```
+# 查看主应用日志
 docker compose logs -f app
+
+# 查看目录服务日志
+docker compose logs -f catalog-service
+
+# 查看注册服务日志
+docker compose logs -f enrollment-service
 
 # 查看数据库日志
 docker compose logs -f mysql
@@ -362,158 +459,70 @@ MySQL数据通过命名卷持久化存储，即使容器重启数据也不会丢
 
 ## API接口详情
 
-### 课程相关接口
+### 主服务接口
 
-#### 获取所有课程
-```http
-GET http://localhost:8080/api/courses
-```
+#### 课程相关接口
+- 获取所有课程: `GET http://localhost:8080/api/courses`
+- 获取指定课程: `GET http://localhost:8080/api/courses/{id}`
+- 创建课程: `POST http://localhost:8080/api/courses`
+- 更新课程: `PUT http://localhost:8080/api/courses/{id}`
+- 删除课程: `DELETE http://localhost:8080/api/courses/{id}`
 
-#### 获取指定课程
-```http
-GET http://localhost:8080/api/courses/{id}
-```
+#### 学生相关接口
+- 创建学生: `POST http://localhost:8080/api/students`
+- 获取所有学生: `GET http://localhost:8080/api/students`
+- 根据ID获取学生: `GET http://localhost:8080/api/students/{id}`
+- 更新学生信息: `PUT http://localhost:8080/api/students/{id}`
+- 删除学生: `DELETE http://localhost:8080/api/students/{id}`
 
-#### 创建课程
-```http
-POST http://localhost:8080/api/courses
-Content-Type: application/json
+#### 选课相关接口
+- 学生选课: `POST http://localhost:8080/api/enrollments`
+- 学生退课: `DELETE http://localhost:8080/api/enrollments/{id}`
+- 获取所有选课记录: `GET http://localhost:8080/api/enrollments`
+- 按课程查询选课记录: `GET http://localhost:8080/api/enrollments/course/{courseId}`
+- 按学生查询选课记录: `GET http://localhost:8080/api/enrollments/student/{studentId}`
 
-{
-  "code": "CS101",
-  "title": "计算机科学导论",
-  "instructor": {
-    "id": "T001",
-    "name": "张教授",
-    "email": "zhang@example.edu.cn"
-  },
-  "schedule": {
-    "dayOfWeek": "MONDAY",
-    "startTime": "08:00",
-    "endTime": "10:00",
-    "expectedAttendance": 50
-  },
-  "capacity": 60
-}
-```
+### 目录服务接口 (端口8081)
 
-#### 更新课程
-```http
-PUT http://localhost:8080/api/courses/{id}
-Content-Type: application/json
+#### 课程相关接口
+- 获取所有课程: `GET http://localhost:8081/api/courses`
+- 获取指定课程: `GET http://localhost:8081/api/courses/{id}`
+- 创建课程: `POST http://localhost:8081/api/courses`
+- 更新课程: `PUT http://localhost:8081/api/courses/{id}`
+- 删除课程: `DELETE http://localhost:8081/api/courses/{id}`
 
-{
-  "code": "CS101",
-  "title": "计算机科学导论-更新版",
-  "instructor": {
-    "id": "T001",
-    "name": "张教授",
-    "email": "zhang@example.edu.cn"
-  },
-  "schedule": {
-    "dayOfWeek": "MONDAY",
-    "startTime": "08:00",
-    "endTime": "10:00",
-    "expectedAttendance": 50
-  },
-  "capacity": 60
-}
-```
+### 注册服务接口 (端口8082)
 
-#### 删除课程
-```http
-DELETE http://localhost:8080/api/courses/{id}
-```
+#### 学生相关接口
+- 创建学生: `POST http://localhost:8082/api/students`
+- 获取所有学生: `GET http://localhost:8082/api/students`
+- 根据ID获取学生: `GET http://localhost:8082/api/students/{id}`
+- 更新学生信息: `PUT http://localhost:8082/api/students/{id}`
+- 删除学生: `DELETE http://localhost:8082/api/students/{id}`
 
-### 学生相关接口
-
-#### 获取所有学生
-```http
-GET http://localhost:8080/api/students
-```
-
-#### 获取指定学生
-```http
-GET http://localhost:8080/api/students/{id}
-```
-
-#### 创建学生
-```http
-POST http://localhost:8080/api/students
-Content-Type: application/json
-
-{
-  "studentId": "S2024001",
-  "name": "张三",
-  "major": "计算机科学与技术",
-  "grade": 2024,
-  "email": "zhangsan@example.com"
-}
-```
-
-#### 更新学生
-```http
-PUT http://localhost:8080/api/students/{id}
-Content-Type: application/json
-
-{
-  "studentId": "S2024001",
-  "name": "张三丰",
-  "major": "软件工程",
-  "grade": 2024,
-  "email": "zhangsanfeng@example.com"
-}
-```
-
-#### 删除学生
-```http
-DELETE http://localhost:8080/api/students/{id}
-```
-
-### 选课相关接口
-
-#### 学生选课
-```http
-POST http://localhost:8080/api/enrollments
-Content-Type: application/json
-
-{
-  "courseId": "课程ID",
-  "studentId": "学生ID"
-}
-```
-
-#### 学生退课
-```http
-DELETE http://localhost:8080/api/enrollments/{id}
-```
-
-#### 获取所有选课记录
-```http
-GET http://localhost:8080/api/enrollments
-```
-
-#### 按课程查询选课记录
-```http
-GET http://localhost:8080/api/enrollments/course/{courseId}
-```
-
-#### 按学生查询选课记录
-```http
-GET http://localhost:8080/api/enrollments/student/{studentId}
-```
+#### 选课相关接口
+- 学生选课: `POST http://localhost:8082/api/enrollments`
+- 学生退课: `DELETE http://localhost:8082/api/enrollments/{id}`
+- 获取所有选课记录: `GET http://localhost:8082/api/enrollments`
+- 按课程查询选课记录: `GET http://localhost:8082/api/enrollments/course/{courseId}`
+- 按学生查询选课记录: `GET http://localhost:8082/api/enrollments/student/{studentId}`
 
 ## 功能验证
 
 ### API测试
 
 #### 获取所有课程
-```bash
+```
+# 从主服务获取课程
 curl http://localhost:8080/api/courses
+
+# 从目录服务获取课程
+curl http://localhost:8081/api/courses
 ```
 
 #### 创建新课程
-```bash
+```
+# 通过主服务创建课程
 curl -X POST http://localhost:8080/api/courses \
   -H "Content-Type: application/json" \
   -d '{
@@ -532,11 +541,33 @@ curl -X POST http://localhost:8080/api/courses \
     },
     "capacity": 50
   }'
+
+# 通过目录服务创建课程
+curl -X POST http://localhost:8081/api/courses \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "CS103",
+    "title": "操作系统原理",
+    "instructor": {
+      "id": "T003",
+      "name": "王教授",
+      "email": "wang@example.edu.cn"
+    },
+    "schedule": {
+      "dayOfWeek": "WEDNESDAY",
+      "startTime": "14:00",
+      "endTime": "16:00",
+      "expectedAttendance": 35
+    },
+    "capacity": 45
+  }'
 ```
 
 ### Web界面访问
 
-访问 http://localhost:8080 查看Web界面。
+访问以下URL查看各服务的Web界面：
+- 主服务界面: http://localhost:8080
+- 注册服务界面: http://localhost:8082
 
 ## 测试数据
 

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catalog Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .endpoint {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        code {
+            background-color: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Catalog Service</h1>
+        <p>欢迎使用课程目录服务！以下是可用的API端点：</p>
+        
+        <div class="endpoint">
+            <h3>获取所有课程</h3>
+            <p><strong>GET</strong> <code>/api/courses</code></p>
+        </div>
+        
+        <div class="endpoint">
+            <h3>获取特定课程</h3>
+            <p><strong>GET</strong> <code>/api/courses/{id}</code></p>
+        </div>
+        
+        <div class="endpoint">
+            <h3>按课程代码查找课程</h3>
+            <p><strong>GET</strong> <code>/api/courses/code/{code}</code></p>
+        </div>
+        
+        <div class="endpoint">
+            <h3>创建新课程</h3>
+            <p><strong>POST</strong> <code>/api/courses</code></p>
+        </div>
+        
+        <div class="endpoint">
+            <h3>更新课程</h3>
+            <p><strong>PUT</strong> <code>/api/courses/{id}</code></p>
+        </div>
+        
+        <div class="endpoint">
+            <h3>删除课程</h3>
+            <p><strong>DELETE</strong> <code>/api/courses/{id}</code></p>
+        </div>
+    </div>
+</body>
+</html>
