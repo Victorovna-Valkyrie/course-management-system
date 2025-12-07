@@ -7,6 +7,9 @@
 - 目录服务（Catalog Service）：专门处理课程目录相关功能，运行在端口8081
 - 注册服务（Enrollment Service）：专门处理学生选课注册相关功能，运行在端口8082
 
+> 当前版本：v1.4  
+> [版本更新说明](RELEASE_NOTES_v1.4.md)
+
 ## 技术栈
 
 - **后端框架**: Spring Boot 2.7.18
@@ -17,6 +20,7 @@
 - **数据库连接池**: HikariCP
 - **前端展示**: HTML/CSS/JavaScript (仅用于数据展示)
 - **容器化**: Docker & Docker Compose
+- **服务发现**: Nacos
 
 ## 项目结构
 
@@ -184,7 +188,7 @@
 ## 使用教程
 
 ### 1. 克隆项目
-```bash
+```
 git clone <项目地址>
 cd course
 ```
@@ -193,12 +197,12 @@ cd course
 按照上述"数据库配置"章节完成MySQL配置
 
 ### 3. 构建项目
-```bash
+```
 mvn clean install
 ```
 
 ### 4. 运行项目
-```bash
+```
 mvn spring-boot:run
 ```
 
@@ -241,7 +245,7 @@ mvn spring-boot:run
 
 采用多阶段构建优化镜像大小：
 
-```dockerfile
+```
 # 构建阶段
 FROM maven:3.9-eclipse-temurin-17 AS builder
 # ... 构建应用
@@ -268,7 +272,7 @@ FROM eclipse-temurin:17-jre-alpine
 #### 服务定义
 
 ##### 主应用服务 (app)
-```yaml
+```
 app:
   build:
     context: .
@@ -288,7 +292,7 @@ app:
 ```
 
 ##### 目录服务 (catalog-service)
-```yaml
+```
 catalog-service:
   build:
     context: ./catalog-service
@@ -306,7 +310,7 @@ catalog-service:
 ```
 
 ##### 注册服务 (enrollment-service)
-```yaml
+```
 enrollment-service:
   build:
     context: ./enrollment-service
@@ -325,7 +329,7 @@ enrollment-service:
 ```
 
 ##### 数据库服务 (mysql)
-```yaml
+```
 mysql:
   image: mysql:8.0
   ports:
@@ -345,7 +349,7 @@ mysql:
 
 #### 网络配置
 
-```yaml
+```
 networks:
   coursehub-network:
     driver: bridge
@@ -353,7 +357,7 @@ networks:
 
 #### 数据卷配置
 
-```yaml
+```
 volumes:
   mysql_data:
 ```
@@ -376,7 +380,7 @@ volumes:
 
 创建 `src/main/resources/application-docker.yml`：
 
-```yaml
+```
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true}
@@ -403,12 +407,12 @@ spring:
 ### 部署操作步骤
 
 #### 1. 构建镜像
-```bash
+```
 docker compose build
 ```
 
 #### 2. 启动服务
-```bash
+```
 docker compose up -d
 ```
 
@@ -420,7 +424,7 @@ docker compose up -d
 - 数据库连接: localhost:3306
 
 #### 3. 查看服务状态
-```bash
+```
 docker compose ps
 ```
 
@@ -440,7 +444,7 @@ docker compose logs -f mysql
 ```
 
 #### 5. 停止服务
-```bash
+```
 # 停止服务但保留数据
 docker compose down
 
@@ -456,6 +460,70 @@ docker compose down -v
 
 ### 数据持久化
 MySQL数据通过命名卷持久化存储，即使容器重启数据也不会丢失。
+
+## Nacos服务发现集成
+
+本项目已集成Nacos作为服务发现组件，实现服务的自动注册与发现，替代原有的硬编码服务地址方式。
+
+### Nacos配置要求
+
+在各服务的 `application.yml` 中添加了Nacos配置:
+
+```yaml
+spring:
+  application:
+    name: catalog-service # 服务名: catalog-service 或 enrollment-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: nacos:8848
+        namespace: dev
+        group: COURSEHUB_GROUP
+        ephemeral: true
+        heart-beat-interval: 5000
+        heart-beat-timeout: 15000
+```
+
+### Docker Compose更新
+
+docker-compose.yml文件已更新，添加了Nacos服务:
+
+```yaml
+services:
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    container_name: nacos
+    environment:
+      - MODE=standalone
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    networks:
+      - coursehub-network
+    restart: unless-stopped
+```
+
+### 服务间调用方式变化
+
+Enrollment Service现在通过服务名调用Catalog Service，而不是使用硬编码的URL地址。
+
+### 健康检查配置
+
+通过Spring Boot Actuator配置了健康检查接口，确保Nacos能够准确监控服务状态:
+
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+```
+
+### Nacos控制台访问
+
+- 控制台地址: http://localhost:8848/nacos
+- 默认用户名: nacos
+- 默认密码: nacos
 
 ## API接口详情
 
@@ -612,6 +680,92 @@ curl -X POST http://localhost:8081/api/courses \
 
 ### 日志查看
 应用日志会输出到控制台，包含启动信息、数据库操作、API调用等详细信息，有助于排查问题。
+
+## 开发过程记录
+
+### 版本 v1.4 更新内容
+
+此版本主要集成了Nacos服务注册发现功能，优化了enrollment-service的前端界面。
+
+#### Nacos服务注册发现集成
+- 集成了Nacos作为服务注册与发现组件
+- 实现了微服务的自动注册与发现
+- 替代了原有的硬编码服务地址方式
+- 添加了Nacos健康检查配置
+
+#### enrollment-service 前端界面优化
+- 重构了学生管理和选课管理界面，采用标签页设计
+- 统一了界面风格，与catalog-service保持一致
+- 改进了数据表格展示，使信息更加清晰易读
+- 完善了所有CRUD操作的前端实现
+- 增加了详细的错误提示和成功反馈
+- 优化了JSON数据的输入和展示方式
+
+### 服务注册问题修复
+
+在项目初期部署过程中，我们遇到了微服务无法正常注册到Nacos的问题。经过分析和排查，我们进行了以下关键修改：
+
+#### 问题现象
+- Nacos控制台服务列表为空
+- 微服务启动正常，但未在Nacos中显示
+- 无明显的错误日志指示注册失败原因
+
+#### 问题分析与解决过程
+1. **检查@EnableDiscoveryClient注解**
+   - 确认所有微服务启动类均已添加`@EnableDiscoveryClient`注解
+   - catalog-service初始缺少该注解，已补充添加
+
+2. **验证Nacos配置**
+   - 检查各服务的application.yml配置文件
+   - 确保`spring.cloud.nacos.discovery`配置正确
+   - 移除了可能导致问题的`namespace: dev`配置，改用默认命名空间
+
+3. **添加必要的依赖**
+   - 为主服务添加了Nacos Discovery Starter依赖
+   - 确保所有服务的pom.xml都包含必要的Nacos依赖
+
+4. **配置优化**
+   - 在所有服务中显式启用了服务发现功能：
+     ```yaml
+     spring.cloud.discovery.enabled: true
+     spring.cloud.nacos.discovery.enabled: true
+     ```
+   - 添加了健康检查配置以确保Nacos能正确监控服务状态
+
+5. **健康检查端点**
+   - 为所有服务添加了健康检查控制器，提供`/health`端点
+
+6. **Docker Compose优化**
+   - 添加了服务健康检查机制
+   - 设置了服务依赖关系，确保Nacos和MySQL健康后再启动应用服务
+
+#### 最终效果
+经过以上修改，所有微服务（course-service、catalog-service、enrollment-service）都能成功注册到Nacos，并在Nacos控制台的服务列表中正常显示。
+
+### enrollment-service前端界面优化
+
+为了提升用户体验，我们对enrollment-service的前端界面进行了全面优化：
+
+#### 优化内容
+1. **界面重构**：
+   - 采用了标签页设计，将学生管理和选课管理功能分离
+   - 统一了界面风格，使其与catalog-service保持一致
+   - 改进了数据表格展示，使信息更加清晰易读
+
+2. **功能增强**：
+   - 完善了所有CRUD操作的前端实现
+   - 增加了详细的错误提示和成功反馈
+   - 优化了JSON数据的输入和展示方式
+
+3. **交互改善**：
+   - 提供了更友好的用户操作引导
+   - 增加了示例数据模板，方便用户快速上手
+   - 改进了响应结果显示方式，支持表格和JSON两种形式
+
+#### 使用方法
+访问 http://localhost:8082 即可使用优化后的界面，通过标签页切换学生管理和选课管理功能：
+- 学生管理：支持学生信息的增删改查操作
+- 选课管理：支持选课记录查询、学生选课和退课操作
 
 ## 贡献指南
 

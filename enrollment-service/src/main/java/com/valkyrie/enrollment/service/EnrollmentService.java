@@ -7,6 +7,8 @@ import com.valkyrie.enrollment.model.Student;
 import com.valkyrie.enrollment.repository.EnrollmentRepository;
 import com.valkyrie.enrollment.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
@@ -30,7 +32,7 @@ public class EnrollmentService {
     private RestTemplate restTemplate;
     
     @Autowired
-    private AppConfig appConfig;
+    private DiscoveryClient discoveryClient;
     
     public List<Enrollment> findAll() {
         return enrollmentRepository.findAll();
@@ -63,7 +65,16 @@ public class EnrollmentService {
                 .orElseThrow(() -> new RuntimeException("Student not found: " + studentId));
         
         // 2. 调用课程目录服务验证课程是否存在
-        String url = appConfig.getCatalogServiceUrl() + "/api/courses/" + courseId;
+        List<ServiceInstance> instances = discoveryClient.getInstances("catalog-service");
+        if (instances.isEmpty()) {
+            throw new RuntimeException("No instances found for catalog-service");
+        }
+        
+        // 简单轮询负载均衡
+        ServiceInstance instance = instances.get(0);
+        String baseUrl = instance.getUri().toString();
+        String url = baseUrl + "/api/courses/" + courseId;
+        
         Map<String, Object> courseResponse;
         try {
             courseResponse = restTemplate.getForObject(url, Map.class);
@@ -108,7 +119,17 @@ public class EnrollmentService {
     }
     
     private void updateCourseEnrolledCount(String courseId, int newCount) {
-        String url = appConfig.getCatalogServiceUrl() + "/api/courses/" + courseId;
+        List<ServiceInstance> instances = discoveryClient.getInstances("catalog-service");
+        if (instances.isEmpty()) {
+            System.err.println("No instances found for catalog-service");
+            return;
+        }
+        
+        // 简单轮询负载均衡
+        ServiceInstance instance = instances.get(0);
+        String baseUrl = instance.getUri().toString();
+        String url = baseUrl + "/api/courses/" + courseId;
+        
         Map<String, Object> updateData = Map.of("enrolled", newCount);
         try {
             restTemplate.put(url, updateData);
@@ -131,7 +152,17 @@ public class EnrollmentService {
         enrollmentRepository.deleteById(enrollmentId);
         
         // Update course enrolled count
-        String url = appConfig.getCatalogServiceUrl() + "/api/courses/" + enrollment.getCourseId();
+        List<ServiceInstance> instances = discoveryClient.getInstances("catalog-service");
+        if (instances.isEmpty()) {
+            System.err.println("No instances found for catalog-service");
+            return;
+        }
+        
+        // 简单轮询负载均衡
+        ServiceInstance instance = instances.get(0);
+        String baseUrl = instance.getUri().toString();
+        String url = baseUrl + "/api/courses/" + enrollment.getCourseId();
+        
         try {
             Map<String, Object> courseResponse = restTemplate.getForObject(url, Map.class);
             if (courseResponse != null && (int) courseResponse.get("code") == 200) {

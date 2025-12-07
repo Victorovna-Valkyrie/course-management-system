@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -18,7 +18,7 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        h1 {
+        h1, h2 {
             color: #333;
             text-align: center;
         }
@@ -29,35 +29,651 @@
             margin: 15px 0;
             border-radius: 4px;
         }
-        code {
-            background-color: #e9ecef;
-            padding: 2px 4px;
-            border-radius: 3px;
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+        }
+        .btn-delete:hover {
+            background-color: #c82333;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .result-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result-error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .hidden {
+            display: none;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        textarea {
+            height: 100px;
+            font-family: monospace;
+        }
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            margin-bottom: 20px;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #ccc;
+        }
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Enrollment Service</h1>
-        <p>欢迎使用学生选课服务！以下是可用的API端点：</p>
+        <h1>学生选课服务</h1>
         
-        <div class="endpoint">
-            <h3>学生管理</h3>
-            <p><strong>GET</strong> <code>/api/students</code> - 获取所有学生</p>
-            <p><strong>GET</strong> <code>/api/students/{id}</code> - 获取特定学生</p>
-            <p><strong>POST</strong> <code>/api/students</code> - 创建学生</p>
-            <p><strong>PUT</strong> <code>/api/students/{id}</code> - 更新学生</p>
-            <p><strong>DELETE</strong> <code>/api/students/{id}</code> - 删除学生</p>
+        <!-- 学生管理标签页 -->
+        <div class="tab">
+            <button class="tablinks active" onclick="openTab(event, 'student-management')">学生管理</button>
+            <button class="tablinks" onclick="openTab(event, 'enrollment-management')">选课管理</button>
         </div>
         
-        <div class="endpoint">
-            <h3>选课管理</h3>
-            <p><strong>GET</strong> <code>/api/enrollments</code> - 获取所有选课记录</p>
-            <p><strong>GET</strong> <code>/api/enrollments/course/{courseId}</code> - 按课程查询选课</p>
-            <p><strong>GET</strong> <code>/api/enrollments/student/{studentId}</code> - 按学生查询选课</p>
-            <p><strong>POST</strong> <code>/api/enrollments</code> - 学生选课</p>
-            <p><strong>DELETE</strong> <code>/api/enrollments/{id}</code> - 学生退课</p>
+        <!-- 学生管理 -->
+        <div id="student-management" class="tabcontent" style="display: block;">
+            <h2>学生管理</h2>
+            
+            <!-- 获取所有学生 -->
+            <div class="section">
+                <h3>获取所有学生</h3>
+                <button class="btn btn-success" onclick="loadStudents()">获取所有学生</button>
+                <div id="students-result"></div>
+            </div>
+            
+            <!-- 根据ID查询学生 -->
+            <div class="section">
+                <h3>查询学生</h3>
+                <div class="form-group">
+                    <label for="student-id">学生ID:</label>
+                    <input type="text" id="student-id" placeholder="输入学生ID">
+                </div>
+                <button class="btn" onclick="getStudentById()">查询学生</button>
+                <div id="student-result"></div>
+            </div>
+            
+            <!-- 创建学生 -->
+            <div class="section">
+                <h3>创建学生</h3>
+                <div class="form-group">
+                    <label for="new-student">学生信息 (JSON格式):</label>
+                    <textarea id="new-student" placeholder='{
+  "studentId": "2024001",
+  "name": "张三",
+  "major": "计算机科学与技术",
+  "grade": 2024,
+  "email": "zhangsan@example.com"
+}'></textarea>
+                </div>
+                <button class="btn" onclick="createStudent()">创建学生</button>
+                <div id="create-student-result"></div>
+            </div>
+            
+            <!-- 更新学生 -->
+            <div class="section">
+                <h3>更新学生</h3>
+                <div class="form-group">
+                    <label for="update-student-id">学生ID:</label>
+                    <input type="text" id="update-student-id" placeholder="输入要更新的学生ID">
+                </div>
+                <div class="form-group">
+                    <label for="update-student">学生信息 (JSON格式):</label>
+                    <textarea id="update-student" placeholder='{
+  "studentId": "2024001",
+  "name": "张三",
+  "major": "计算机科学与技术",
+  "grade": 2024,
+  "email": "zhangsan@example.com"
+}'></textarea>
+                </div>
+                <button class="btn" onclick="updateStudent()">更新学生</button>
+                <div id="update-student-result"></div>
+            </div>
+            
+            <!-- 删除学生 -->
+            <div class="section">
+                <h3>删除学生</h3>
+                <div class="form-group">
+                    <label for="delete-student-id">学生ID:</label>
+                    <input type="text" id="delete-student-id" placeholder="输入要删除的学生ID">
+                </div>
+                <button class="btn btn-delete" onclick="deleteStudent()">删除学生</button>
+                <div id="delete-student-result"></div>
+            </div>
+        </div>
+        
+        <!-- 选课管理 -->
+        <div id="enrollment-management" class="tabcontent">
+            <h2>选课管理</h2>
+            
+            <!-- 获取所有选课记录 -->
+            <div class="section">
+                <h3>获取所有选课记录</h3>
+                <button class="btn btn-success" onclick="loadEnrollments()">获取所有选课记录</button>
+                <div id="enrollments-result"></div>
+            </div>
+            
+            <!-- 按课程查询选课 -->
+            <div class="section">
+                <h3>按课程查询选课</h3>
+                <div class="form-group">
+                    <label for="course-enrollments-id">课程ID:</label>
+                    <input type="text" id="course-enrollments-id" placeholder="输入课程ID">
+                </div>
+                <button class="btn" onclick="getEnrollmentsByCourse()">查询选课</button>
+                <div id="course-enrollments-result"></div>
+            </div>
+            
+            <!-- 按学生查询选课 -->
+            <div class="section">
+                <h3>按学生查询选课</h3>
+                <div class="form-group">
+                    <label for="student-enrollments-id">学生ID:</label>
+                    <input type="text" id="student-enrollments-id" placeholder="输入学生ID">
+                </div>
+                <button class="btn" onclick="getEnrollmentsByStudent()">查询选课</button>
+                <div id="student-enrollments-result"></div>
+            </div>
+            
+            <!-- 学生选课 -->
+            <div class="section">
+                <h3>学生选课</h3>
+                <div class="form-group">
+                    <label for="enroll-course-id">课程ID:</label>
+                    <input type="text" id="enroll-course-id" placeholder="输入课程ID">
+                </div>
+                <div class="form-group">
+                    <label for="enroll-student-id">学生ID:</label>
+                    <input type="text" id="enroll-student-id" placeholder="输入学生ID">
+                </div>
+                <button class="btn" onclick="enrollStudent()">学生选课</button>
+                <div id="enroll-result"></div>
+            </div>
+            
+            <!-- 学生退课 -->
+            <div class="section">
+                <h3>学生退课</h3>
+                <div class="form-group">
+                    <label for="unenroll-id">选课记录ID:</label>
+                    <input type="text" id="unenroll-id" placeholder="输入选课记录ID">
+                </div>
+                <button class="btn btn-delete" onclick="unenrollStudent()">学生退课</button>
+                <div id="unenroll-result"></div>
+            </div>
         </div>
     </div>
+
+    <script>
+        // 标签页切换
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        // 显示结果的通用函数
+        function showResult(elementId, data, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            if (isSuccess) {
+                if (Array.isArray(data) || typeof data === 'object') {
+                    if (Array.isArray(data)) {
+                        displayArrayTable(data, element);
+                    } else if (data.data) {
+                        if (Array.isArray(data.data)) {
+                            displayArrayTable(data.data, element);
+                        } else {
+                            element.innerHTML = `
+                                <div class="result result-success">
+                                    <h3>操作成功</h3>
+                                    <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        element.innerHTML = `
+                            <div class="result result-success">
+                                <pre>${JSON.stringify(data, null, 2)}</pre>
+                            </div>
+                        `;
+                    }
+                } else {
+                    element.innerHTML = `<div class="result result-success">${data}</div>`;
+                }
+            } else {
+                element.innerHTML = `
+                    <div class="result result-error">
+                        <h3>操作失败</h3>
+                        <p>${data.message || data}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 显示错误结果
+        function showError(elementId, error) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `
+                <div class="result result-error">
+                    <h3>请求失败</h3>
+                    <p>${error.message || error}</p>
+                </div>
+            `;
+        }
+
+        // 显示数组表格（通用）
+        function displayArrayTable(items, container) {
+            if (!items || items.length === 0) {
+                container.innerHTML = '<div class="result result-success">没有找到数据</div>';
+                return;
+            }
+
+            let html = '<div class="result result-success">';
+            
+            // 根据第一个元素的属性决定表格列
+            const firstItem = items[0];
+            
+            if (firstItem.hasOwnProperty('studentId')) {
+                // 学生表格
+                html += `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>学号</th>
+                                <th>姓名</th>
+                                <th>专业</th>
+                                <th>年级</th>
+                                <th>邮箱</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                items.forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.id || ''}</td>
+                            <td>${item.studentId || ''}</td>
+                            <td>${item.name || ''}</td>
+                            <td>${item.major || ''}</td>
+                            <td>${item.grade || ''}</td>
+                            <td>${item.email || ''}</td>
+                        </tr>
+                    `;
+                });
+            } else if (firstItem.hasOwnProperty('courseId')) {
+                // 选课表格
+                html += `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>课程ID</th>
+                                <th>学生ID</th>
+                                <th>状态</th>
+                                <th>选课时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                items.forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.id || ''}</td>
+                            <td>${item.courseId || ''}</td>
+                            <td>${item.studentId || ''}</td>
+                            <td>${item.status || ''}</td>
+                            <td>${item.enrolledAt || ''}</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // 获取所有学生
+        function loadStudents() {
+            fetch('/api/students')
+                .then(response => response.json())
+                .then(data => {
+                    showResult('students-result', data, true);
+                })
+                .catch(error => {
+                    showError('students-result', error);
+                });
+        }
+
+        // 根据ID获取学生
+        function getStudentById() {
+            const id = document.getElementById('student-id').value;
+            if (!id) {
+                showError('student-result', '请输入学生ID');
+                return;
+            }
+
+            fetch(`/api/students/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    showResult('student-result', data, true);
+                })
+                .catch(error => {
+                    showError('student-result', error);
+                });
+        }
+
+        // 创建学生
+        function createStudent() {
+            const studentData = document.getElementById('new-student').value;
+            if (!studentData) {
+                showError('create-student-result', '请输入学生信息');
+                return;
+            }
+
+            let studentObj;
+            try {
+                studentObj = JSON.parse(studentData);
+            } catch (e) {
+                showError('create-student-result', 'JSON格式错误: ' + e.message);
+                return;
+            }
+
+            fetch('/api/students', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(studentObj)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResult('create-student-result', {
+                    message: "学生创建成功",
+                    data: data
+                }, true);
+            })
+            .catch(error => {
+                showError('create-student-result', error);
+            });
+        }
+
+        // 更新学生
+        function updateStudent() {
+            const id = document.getElementById('update-student-id').value;
+            const studentData = document.getElementById('update-student').value;
+            
+            if (!id) {
+                showError('update-student-result', '请输入学生ID');
+                return;
+            }
+            
+            if (!studentData) {
+                showError('update-student-result', '请输入学生信息');
+                return;
+            }
+
+            let studentObj;
+            try {
+                studentObj = JSON.parse(studentData);
+            } catch (e) {
+                showError('update-student-result', 'JSON格式错误: ' + e.message);
+                return;
+            }
+
+            fetch(`/api/students/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(studentObj)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResult('update-student-result', {
+                    message: "学生更新成功",
+                    data: data
+                }, true);
+            })
+            .catch(error => {
+                showError('update-student-result', error);
+            });
+        }
+
+        // 删除学生
+        function deleteStudent() {
+            const id = document.getElementById('delete-student-id').value;
+            if (!id) {
+                showError('delete-student-result', '请输入学生ID');
+                return;
+            }
+
+            fetch(`/api/students/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.status === 200 || response.status === 204) {
+                    showResult('delete-student-result', "学生删除成功", true);
+                } else {
+                    response.text().then(text => {
+                        showError('delete-student-result', text || "删除失败");
+                    }).catch(() => {
+                        showError('delete-student-result', "删除失败");
+                    });
+                }
+            })
+            .catch(error => {
+                showError('delete-student-result', error);
+            });
+        }
+
+        // 获取所有选课记录
+        function loadEnrollments() {
+            fetch('/api/enrollments')
+                .then(response => response.json())
+                .then(data => {
+                    showResult('enrollments-result', data, true);
+                })
+                .catch(error => {
+                    showError('enrollments-result', error);
+                });
+        }
+
+        // 按课程查询选课
+        function getEnrollmentsByCourse() {
+            const courseId = document.getElementById('course-enrollments-id').value;
+            if (!courseId) {
+                showError('course-enrollments-result', '请输入课程ID');
+                return;
+            }
+
+            fetch(`/api/enrollments/course/${courseId}`)
+                .then(response => response.json())
+                .then(data => {
+                    showResult('course-enrollments-result', data, true);
+                })
+                .catch(error => {
+                    showError('course-enrollments-result', error);
+                });
+        }
+
+        // 按学生查询选课
+        function getEnrollmentsByStudent() {
+            const studentId = document.getElementById('student-enrollments-id').value;
+            if (!studentId) {
+                showError('student-enrollments-result', '请输入学生ID');
+                return;
+            }
+
+            fetch(`/api/enrollments/student/${studentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    showResult('student-enrollments-result', data, true);
+                })
+                .catch(error => {
+                    showError('student-enrollments-result', error);
+                });
+        }
+
+        // 学生选课
+        function enrollStudent() {
+            const courseId = document.getElementById('enroll-course-id').value;
+            const studentId = document.getElementById('enroll-student-id').value;
+            
+            if (!courseId) {
+                showError('enroll-result', '请输入课程ID');
+                return;
+            }
+            
+            if (!studentId) {
+                showError('enroll-result', '请输入学生ID');
+                return;
+            }
+
+            const requestData = {
+                courseId: courseId,
+                studentId: studentId
+            };
+
+            fetch('/api/enrollments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResult('enroll-result', {
+                    message: "选课成功",
+                    data: data
+                }, true);
+            })
+            .catch(error => {
+                showError('enroll-result', error);
+            });
+        }
+
+        // 学生退课
+        function unenrollStudent() {
+            const id = document.getElementById('unenroll-id').value;
+            if (!id) {
+                showError('unenroll-result', '请输入选课记录ID');
+                return;
+            }
+
+            fetch(`/api/enrollments/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.status === 200 || response.status === 204) {
+                    showResult('unenroll-result', "退课成功", true);
+                } else {
+                    response.text().then(text => {
+                        showError('unenroll-result', text || "退课失败");
+                    }).catch(() => {
+                        showError('unenroll-result', "退课失败");
+                    });
+                }
+            })
+            .catch(error => {
+                showError('unenroll-result', error);
+            });
+        }
+    </script>
 </body>
 </html>

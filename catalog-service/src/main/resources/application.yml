@@ -5,8 +5,20 @@ server:
 spring:
   application:
     name: catalog-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: nacos:8848
+        # 移除namespace配置以使用默认命名空间
+        group: COURSEHUB_GROUP
+        ephemeral: true
+        heart-beat-interval: 5000
+        heart-beat-timeout: 15000
+        # 添加更多注册配置
+        register-enabled: true
+        watch-delay: 30000
   datasource:
-    url: jdbc:mysql://localhost:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    url: jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
     username: valkyrie
     password: 2501005
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -18,3 +30,17 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  # 添加健康检查配置
+  endpoint:
+    health:
+      show-details: always
+
+# 显式启用cloud discovery
+spring.cloud.discovery.enabled: true
+spring.cloud.nacos.discovery.enabled: true
