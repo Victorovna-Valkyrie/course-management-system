@@ -42,15 +42,22 @@ public class EnrollmentController {
     }
     
     @PostMapping
-    public ApiResponse<Enrollment> createEnrollment(@RequestBody Enrollment enrollment) {
-        logger.info("Creating enrollment from instance on port: " + serverPort);
+    public ApiResponse<Enrollment> createEnrollment(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-Username") String username,
+            @RequestBody Enrollment enrollment) {
+        logger.info("User " + username + " (ID: " + userId + ") creating enrollment from instance on port: " + serverPort);
         Enrollment savedEnrollment = enrollmentService.save(enrollment);
         return new ApiResponse<>(200, "Success", savedEnrollment);
     }
     
     @PostMapping("/enroll")
-    public ApiResponse<Enrollment> enroll(@RequestParam String courseId, @RequestParam String studentId) {
-        logger.info("Enrolling student " + studentId + " to course " + courseId + " from instance on port: " + serverPort);
+    public ApiResponse<Enrollment> enroll(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-Username") String username,
+            @RequestParam String courseId, 
+            @RequestParam String studentId) {
+        logger.info("User " + username + " (ID: " + userId + ") enrolling student " + studentId + " to course " + courseId + " from instance on port: " + serverPort);
         try {
             Enrollment enrollment = enrollmentService.enroll(courseId, studentId);
             return new ApiResponse<>(200, "Success", enrollment);
