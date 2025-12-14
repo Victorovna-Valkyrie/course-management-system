@@ -26,6 +26,19 @@ public class StudentService {
         return studentRepository.save(student);
     }
     
+    public Student update(String id, Student studentDetails) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Student not found with id: " + id));
+        
+        student.setStudentId(studentDetails.getStudentId());
+        student.setName(studentDetails.getName());
+        student.setMajor(studentDetails.getMajor());
+        student.setGrade(studentDetails.getGrade());
+        student.setEmail(studentDetails.getEmail());
+        
+        return studentRepository.save(student);
+    }
+    
     public void deleteById(String id) {
         studentRepository.deleteById(id);
     }

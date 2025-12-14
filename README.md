@@ -21,6 +21,8 @@
 - **前端展示**: HTML/CSS/JavaScript (仅用于数据展示)
 - **容器化**: Docker & Docker Compose
 - **服务发现**: Nacos
+- **服务调用**: OpenFeign
+- **熔断器**: Resilience4j
 
 ## 项目结构
 
@@ -81,9 +83,14 @@
 │       ├── repository/
 │       │   ├── EnrollmentRepository.java
 │       │   └── StudentRepository.java
-│       └── service/
-│           ├── EnrollmentService.java
-│           └── StudentService.java
+│       ├── service/
+│       │   ├── EnrollmentService.java
+│       │   └── StudentService.java
+│       └── client/                               # OpenFeign客户端
+│           ├── UserClient.java
+│           ├── UserClientFallback.java
+│           ├── CatalogClient.java
+│           └── CatalogClientFallback.java
 └── src/main/resources/
     ├── application.properties                      # 主服务配置文件
     ├── application-docker.yml                     # Docker环境配置文件
@@ -524,6 +531,69 @@ management:
 - 控制台地址: http://localhost:8848/nacos
 - 默认用户名: nacos
 - 默认密码: nacos
+
+## OpenFeign服务间通信
+
+本项目已在Enrollment Service中集成OpenFeign来实现服务间的通信，并配置了负载均衡和熔断机制。
+
+### OpenFeign配置
+
+在enrollment-service中添加了以下依赖:
+
+```xml
+<!-- OpenFeign -->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-openfeign</artifactId>
+</dependency>
+
+<!-- Resilience4j 熔断器 -->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
+</dependency>
+```
+
+### Feign客户端
+
+创建了以下Feign客户端接口:
+1. [UserClient.java](file:///C:/Users/ASUS/IdeaProjects/course/enrollment-service/src/main/java/com/valkyrie/enrollment/client/UserClient.java) - 用于调用用户服务
+2. [CatalogClient.java](file:///C:/Users/ASUS/IdeaProjects/course/enrollment-service/src/main/java/com/valkyrie/enrollment/client/CatalogClient.java) - 用于调用课程目录服务
+
+### Fallback降级处理
+
+为每个Feign客户端实现了Fallback类:
+1. [UserClientFallback.java](file:///C:/Users/ASUS/IdeaProjects/course/enrollment-service/src/main/java/com/valkyrie/enrollment/client/UserClientFallback.java)
+2. [CatalogClientFallback.java](file:///C:/Users/ASUS/IdeaProjects/course/enrollment-service/src/main/java/com/valkyrie/enrollment/client/CatalogClientFallback.java)
+
+### 负载均衡与熔断配置
+
+在application.yml中配置了Feign和Resilience4j:
+
+```yaml
+spring:
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+      client:
+        config:
+          default:
+            connectTimeout: 3000
+            readTimeout: 5000
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      user-service:
+        failureRateThreshold: 50
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+      catalog-service:
+        failureRateThreshold: 50
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+```
 
 ## API接口详情
 

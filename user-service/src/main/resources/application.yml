@@ -1,29 +1,19 @@
 server:
-  port: 8082
+  port: 8081
 
 spring:
   application:
-    name: enrollment-service
+    name: user-service
   cloud:
     nacos:
       discovery:
         server-addr: nacos:8848
-        # 移除namespace配置以使用默认命名空间
         group: COURSEHUB_GROUP
         ephemeral: true
         heart-beat-interval: 5000
         heart-beat-timeout: 15000
-        # 添加更多注册配置
         register-enabled: true
         watch-delay: 30000
-    openfeign:
-      circuitbreaker:
-        enabled: true
-      client:
-        config:
-          default:
-            connectTimeout: 3000
-            readTimeout: 5000
   datasource:
     url: jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
     username: valkyrie
@@ -43,27 +33,9 @@ management:
     web:
       exposure:
         include: "*"
-  # 添加健康检查配置
   endpoint:
     health:
       show-details: always
 
-# 显式启用cloud discovery
 spring.cloud.discovery.enabled: true
 spring.cloud.nacos.discovery.enabled: true
-
-# Resilience4j 熔断器配置
-resilience4j:
-  circuitbreaker:
-    instances:
-      user-service:
-        failureRateThreshold: 50
-        slidingWindowType: COUNT_BASED
-        slidingWindowSize: 10
-      catalog-service:
-        failureRateThreshold: 50
-        slidingWindowType: COUNT_BASED
-        slidingWindowSize: 10
-
-catalog-service:
-  url: http://catalog-service:8081

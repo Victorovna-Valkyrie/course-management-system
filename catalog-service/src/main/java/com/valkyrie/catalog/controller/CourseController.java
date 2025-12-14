@@ -1,108 +1,63 @@
 package com.valkyrie.catalog.controller;
 
+import com.valkyrie.catalog.dto.ApiResponse;
 import com.valkyrie.catalog.model.Course;
 import com.valkyrie.catalog.service.CourseService;
-import com.valkyrie.catalog.dto.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/courses")
-@CrossOrigin(origins = "*")
 public class CourseController {
+    
+    private static final Logger logger = Logger.getLogger(CourseController.class.getName());
+    
+    @Value("${server.port}")
+    private String serverPort;
     
     @Autowired
     private CourseService courseService;
     
-    // 根路径处理
-    @RequestMapping(value = "/", method = RequestMethod.GET)
-    public ResponseEntity<String> home() {
-        return ResponseEntity.ok("<h1>Catalog Service is Running</h1><p>Access <a href='/api/courses'>/api/courses</a> to see courses</p>");
-    }
-    
-    // 查询所有课程
     @GetMapping
-    public ResponseEntity<ApiResponse<List<Course>>> getAllCourses() {
+    public ApiResponse<List<Course>> getAllCourses() {
+        logger.info("Getting all courses from instance on port: " + serverPort);
         List<Course> courses = courseService.findAll();
-        return ResponseEntity.ok(ApiResponse.success(courses));
+        return new ApiResponse<>(200, "Success", courses);
     }
     
-    // 查询单个课程
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Course>> getCourseById(@PathVariable String id) {
-        Optional<Course> course = courseService.findById(id);
-        
-        if (course.isPresent()) {
-            return ResponseEntity.ok(ApiResponse.success(course.get()));
+    public ApiResponse<Course> getCourseById(@PathVariable String id) {
+        logger.info("Getting course by id: " + id + " from instance on port: " + serverPort);
+        Course course = courseService.findById(id).orElse(null);
+        if (course != null) {
+            return new ApiResponse<>(200, "Success", course);
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(404, "Course not found"));
+            return new ApiResponse<>(404, "Course not found", null);
         }
     }
     
-    // 按课程代码查询
-    @GetMapping("/code/{code}")
-    public ResponseEntity<ApiResponse<Course>> getCourseByCode(@PathVariable String code) {
-        List<Course> courses = courseService.findByCode(code);
-        if (!courses.isEmpty()) {
-            return ResponseEntity.ok(ApiResponse.success(courses.get(0)));
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(404, "Course not found"));
-        }
-    }
-    
-    // 创建课程
     @PostMapping
-    public ResponseEntity<ApiResponse<Course>> createCourse(@RequestBody Course course) {
-        // Generate ID if not provided
-        if (course.getId() == null || course.getId().isEmpty()) {
-            course.setId(java.util.UUID.randomUUID().toString());
-        }
-        
+    public ApiResponse<Course> createCourse(@RequestBody Course course) {
+        logger.info("Creating course from instance on port: " + serverPort);
         Course savedCourse = courseService.save(course);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(savedCourse));
+        return new ApiResponse<>(200, "Success", savedCourse);
     }
     
-    // 更新课程
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Course>> updateCourse(@PathVariable String id, @RequestBody Course courseDetails) {
-        Optional<Course> course = courseService.findById(id);
-        
-        if (course.isPresent()) {
-            Course updatedCourse = course.get();
-            // Update fields
-            updatedCourse.setCode(courseDetails.getCode());
-            updatedCourse.setTitle(courseDetails.getTitle());
-            updatedCourse.setInstructor(courseDetails.getInstructor());
-            updatedCourse.setSchedule(courseDetails.getSchedule());
-            updatedCourse.setCapacity(courseDetails.getCapacity());
-            
-            courseService.save(updatedCourse);
-            
-            return ResponseEntity.ok(ApiResponse.success("Success", updatedCourse));
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(404, "Course not found"));
-        }
+    public ApiResponse<Course> updateCourse(@PathVariable String id, @RequestBody Course courseDetails) {
+        logger.info("Updating course by id: " + id + " from instance on port: " + serverPort);
+        Course updatedCourse = courseService.update(id, courseDetails);
+        return new ApiResponse<>(200, "Success", updatedCourse);
     }
     
-    // 删除课程
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteCourse(@PathVariable String id) {
-        Optional<Course> course = courseService.findById(id);
-        
-        if (course.isPresent()) {
-            courseService.deleteById(id);
-            return ResponseEntity.ok(ApiResponse.success("Success", null));
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(404, "Course not found"));
-        }
+    public ApiResponse<Void> deleteCourse(@PathVariable String id) {
+        logger.info("Deleting course by id: " + id + " from instance on port: " + serverPort);
+        courseService.deleteById(id);
+        return new ApiResponse<>(200, "Success", null);
     }
 }

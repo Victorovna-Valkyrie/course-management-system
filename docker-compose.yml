@@ -41,15 +41,123 @@ services:
       - coursehub-network
     restart: unless-stopped
 
-  catalog-service:
+  catalog-service-1:
     build:
       context: ./catalog-service
     ports:
-      - "8081:8081"
+      - "8091:8081"
     environment:
+      - SERVER_PORT=8081
+      - SPRING_APPLICATION_NAME=catalog-service
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true
       - SPRING_DATASOURCE_USERNAME=valkyrie
       - SPRING_DATASOURCE_PASSWORD=2501005
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - coursehub-network
+    restart: unless-stopped
+
+  catalog-service-2:
+    build:
+      context: ./catalog-service
+    ports:
+      - "8085:8081"
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_APPLICATION_NAME=catalog-service
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true
+      - SPRING_DATASOURCE_USERNAME=valkyrie
+      - SPRING_DATASOURCE_PASSWORD=2501005
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - coursehub-network
+    restart: unless-stopped
+
+  catalog-service-3:
+    build:
+      context: ./catalog-service
+    ports:
+      - "8086:8081"
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_APPLICATION_NAME=catalog-service
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true
+      - SPRING_DATASOURCE_USERNAME=valkyrie
+      - SPRING_DATASOURCE_PASSWORD=2501005
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - coursehub-network
+    restart: unless-stopped
+
+  user-service-1:
+    build:
+      context: ./user-service
+    ports:
+      - "8087:8081"
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_APPLICATION_NAME=user-service
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true
+      - SPRING_DATASOURCE_USERNAME=valkyrie
+      - SPRING_DATASOURCE_PASSWORD=2501005
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - coursehub-network
+    restart: unless-stopped
+
+  user-service-2:
+    build:
+      context: ./user-service
+    ports:
+      - "8088:8081"
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_APPLICATION_NAME=user-service
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true
+      - SPRING_DATASOURCE_USERNAME=valkyrie
+      - SPRING_DATASOURCE_PASSWORD=2501005
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - coursehub-network
+    restart: unless-stopped
+
+  user-service-3:
+    build:
+      context: ./user-service
+    ports:
+      - "8089:8081"
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_APPLICATION_NAME=user-service
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true
+      - SPRING_DATASOURCE_USERNAME=valkyrie
+      - SPRING_DATASOURCE_PASSWORD=2501005
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
     depends_on:
       mysql:
         condition: service_healthy
@@ -68,6 +176,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/course_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true
       - SPRING_DATASOURCE_USERNAME=valkyrie
       - SPRING_DATASOURCE_PASSWORD=2501005
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
     depends_on:
       mysql:
         condition: service_healthy

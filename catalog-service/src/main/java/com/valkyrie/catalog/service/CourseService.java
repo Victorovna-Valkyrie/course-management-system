@@ -30,6 +30,20 @@ public class CourseService {
         return courseRepository.save(course);
     }
     
+    public Course update(String id, Course courseDetails) {
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Course not found with id: " + id));
+        
+        course.setCode(courseDetails.getCode());
+        course.setTitle(courseDetails.getTitle());
+        course.setInstructor(courseDetails.getInstructor());
+        course.setSchedule(courseDetails.getSchedule());
+        course.setCapacity(courseDetails.getCapacity());
+        course.setEnrolled(courseDetails.getEnrolled());
+        
+        return courseRepository.save(course);
+    }
+    
     public void deleteById(String id) {
         courseRepository.deleteById(id);
     }

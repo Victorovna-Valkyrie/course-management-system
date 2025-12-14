@@ -1,67 +1,79 @@
 package com.valkyrie.enrollment.controller;
 
+import com.valkyrie.enrollment.dto.ApiResponse;
 import com.valkyrie.enrollment.model.Enrollment;
 import com.valkyrie.enrollment.service.EnrollmentService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/enrollments")
 public class EnrollmentController {
     
+    private static final Logger logger = Logger.getLogger(EnrollmentController.class.getName());
+    
+    @Value("${server.port}")
+    private String serverPort;
+    
     @Autowired
     private EnrollmentService enrollmentService;
     
-    // 获取所有选课记录
     @GetMapping
-    public ResponseEntity<List<Enrollment>> getAllEnrollments() {
+    public ApiResponse<List<Enrollment>> getAllEnrollments() {
+        logger.info("Getting all enrollments from instance on port: " + serverPort);
         List<Enrollment> enrollments = enrollmentService.findAll();
-        return ResponseEntity.ok(enrollments);
+        return new ApiResponse<>(200, "Success", enrollments);
     }
     
-    // 按课程查询选课
-    @GetMapping("/course/{courseId}")
-    public ResponseEntity<List<Enrollment>> getEnrollmentsByCourseId(@PathVariable String courseId) {
-        List<Enrollment> enrollments = enrollmentService.findByCourseId(courseId);
-        return ResponseEntity.ok(enrollments);
-    }
-    
-    // 按学生查询选课
-    @GetMapping("/student/{studentId}")
-    public ResponseEntity<List<Enrollment>> getEnrollmentsByStudentId(@PathVariable String studentId) {
-        List<Enrollment> enrollments = enrollmentService.findByStudentId(studentId);
-        return ResponseEntity.ok(enrollments);
-    }
-    
-    // 学生选课
-    @PostMapping
-    public ResponseEntity<?> enrollStudent(@RequestBody Map<String, String> request) {
-        try {
-            String courseId = request.get("courseId");
-            String studentId = request.get("studentId");
-            
-            Enrollment enrollment = enrollmentService.enroll(courseId, studentId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(enrollment);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+    @GetMapping("/{id}")
+    public ApiResponse<Enrollment> getEnrollmentById(@PathVariable String id) {
+        logger.info("Getting enrollment by id: " + id + " from instance on port: " + serverPort);
+        Optional<Enrollment> enrollment = enrollmentService.findById(id);
+        if (enrollment.isPresent()) {
+            return new ApiResponse<>(200, "Success", enrollment.get());
+        } else {
+            return new ApiResponse<>(404, "Enrollment not found", null);
         }
     }
     
-    // 学生退课
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> unenrollStudent(@PathVariable String id) {
+    @PostMapping
+    public ApiResponse<Enrollment> createEnrollment(@RequestBody Enrollment enrollment) {
+        logger.info("Creating enrollment from instance on port: " + serverPort);
+        Enrollment savedEnrollment = enrollmentService.save(enrollment);
+        return new ApiResponse<>(200, "Success", savedEnrollment);
+    }
+    
+    @PostMapping("/enroll")
+    public ApiResponse<Enrollment> enroll(@RequestParam String courseId, @RequestParam String studentId) {
+        logger.info("Enrolling student " + studentId + " to course " + courseId + " from instance on port: " + serverPort);
+        try {
+            Enrollment enrollment = enrollmentService.enroll(courseId, studentId);
+            return new ApiResponse<>(200, "Success", enrollment);
+        } catch (RuntimeException e) {
+            return new ApiResponse<>(400, e.getMessage(), null);
+        }
+    }
+    
+    @DeleteMapping("/unenroll/{id}")
+    public ApiResponse<Void> unenroll(@PathVariable String id) {
+        logger.info("Unenrolling enrollment " + id + " from instance on port: " + serverPort);
         try {
             enrollmentService.unenroll(id);
-            return ResponseEntity.ok().build();
+            return new ApiResponse<>(200, "Success", null);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+            return new ApiResponse<>(400, e.getMessage(), null);
         }
+    }
+    
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> deleteEnrollment(@PathVariable String id) {
+        logger.info("Deleting enrollment by id: " + id + " from instance on port: " + serverPort);
+        enrollmentService.deleteById(id);
+        return new ApiResponse<>(200, "Success", null);
     }
 }
